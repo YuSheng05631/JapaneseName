@@ -6,3 +6,12 @@ class Kana:
     def append(self, label, count):
         self.label.append(label)
         self.count.append(count)
+
+class Name:
+    def __init__(self):
+        self.kana = list()
+        self.kanji = list()
+
+    def append(self, kana, kanji):
+        self.kana.append(kana)
+        self.kanji.append(kanji)

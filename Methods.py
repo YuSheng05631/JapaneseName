@@ -1,6 +1,11 @@
 import Classes
 import requests
 
+# global
+url = ""
+page = 1
+pageLast = 1
+
 # 取得五十音列表
 def getKana():
     # 取得首頁原始碼
@@ -35,6 +40,7 @@ def getKana():
             kanaF.append(cutL, cutC)
         first = res.text.find("kana-label", first) + 12
 
+    printKana(kanaM, kanaF)
     return kanaM, kanaF
 
 # 印出五十音列表
@@ -59,24 +65,34 @@ def printKana(kanaM, kanaF):
 # 選擇五十音代碼
 def chooseNum(kanaM, kanaF):
     num = input("請輸入五十音代碼: ")
-    if not num.isdigit() or not int(num) >= 1 or not int(num) <= len(kanaM.label) + len(kanaF.label):
+    if num == "q":
+        return
+    elif not num.isdigit() or not int(num) >= 1 or not int(num) <= len(kanaM.label) + len(kanaF.label):
         print("輸入錯誤，請重新輸入。\n")
         chooseNum(kanaM, kanaF)
         return
-    getName(int(num), kanaM, kanaF)
+    getNamesByNum(int(num), kanaM, kanaF)
 
-# 取得名字
-def getName(num, kanaM, kanaF):
+# 取得名字by五十音號碼
+def getNamesByNum(num, kanaM, kanaF):
     # 組合網址
-    url = ""
+    global page, url, pageLast
+    page = 1
     if num <= len(kanaM.label):
-        url = "http://name.m3q.jp/list?s=" + kanaM.label[num - 1] + "&g=1"
+        url = "http://name.m3q.jp/list?s=" + kanaM.label[num - 1] + "&g=1&page="
+        pageLast = int(int(kanaM.count[num - 1]) / 50) + 1
     else:
         num -= len(kanaM.label)
-        url = "http://name.m3q.jp/list?s=" + kanaF.label[num - 1] + "&g=2"
+        url = "http://name.m3q.jp/list?s=" + kanaF.label[num - 1] + "&g=2&page="
+        pageLast = int(int(kanaF.count[num - 1]) / 50) + 1
+    getNamesByUrl()
 
-    # 取得首頁原始碼
-    res = requests.get(url)
+# 取得名字by網址
+def getNamesByUrl():
+    global page, url
+    # 取得原始碼
+    res = requests.get(url + str(page))
+    names = Classes.Name()
     first = res.text.find("<td class=\"cel-kana\">")
     while first != -1:
         first = res.text.find("<a href", first)
@@ -87,5 +103,45 @@ def getName(num, kanaM, kanaF):
         first = res.text.find(">", first) + 1
         last = res.text.find("<", first)
         cutKanji = res.text[first:last]
-        print(cutKanji + " (" + cutKana + ")")
-        first = res.text.find("<td class=\"cel-kana\">",  first)
+        names.append(cutKana, cutKanji)
+        first = res.text.find("<td class=\"cel-kana\">", first)
+    printNames(names)
+    chooseAct()
+
+# 印出名字
+def printNames(names):
+    for i in range(0, len(names.kana), 3):
+        for j in range(i, i + 3):
+            if j < len(names.kana):
+                l = len(names.kanji[j]) + len(names.kana[j])
+                l = 12 - l
+                s = names.kanji[j] + " (" + names.kana[j] + ")"
+                print(s, end="　"*l)
+        print()
+    print()
+
+# 選擇動作(下一頁、頁碼、返回)
+def chooseAct():
+    global page, pageLast
+    act = input("第" + str(page) + "頁(共" + str(pageLast) + "頁)\n")
+    if act == "":
+        if page < pageLast:
+            print()
+            page += 1
+            getNamesByUrl()
+        else:
+            print("已經是最後一頁囉。")
+            chooseAct()
+    elif act == "0":
+        print("回到首頁。\n")
+        kanaM, kanaF = getKana()
+        chooseNum(kanaM, kanaF)
+    elif act.isdigit() and int(act) > 0 and int(act) <= pageLast:
+        print()
+        page = int(act)
+        getNamesByUrl()
+    elif act == "q":
+        return
+    else:
+        print("輸入錯誤，請重新輸入。")
+        chooseAct()
