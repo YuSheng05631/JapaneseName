@@ -123,7 +123,8 @@ def printNames(names):
 # 選擇動作(下一頁、頁碼、返回)
 def chooseAct():
     global page, pageLast
-    act = input("第" + str(page) + "頁(共" + str(pageLast) + "頁)\n")
+    act = input("第" + str(page) + "頁(共" + str(pageLast) + "頁)\n" +
+                "Enter可跳至下一頁，輸入頁碼可跳至該頁面，輸入0可返回到首頁，輸入q結束程式。\n")
     if act == "":
         if page < pageLast:
             print()
